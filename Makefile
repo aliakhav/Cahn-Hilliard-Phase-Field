@@ -4,7 +4,7 @@ CXXFLAGS=-O3 -Wall -c
 #CXXFLAGS=-O0 -Wall -c
 #CXXFLAGS=-O0 -g -Wall -c
 
-OBJS = PhaseField.o Derivatives.o RND.o
+OBJS = PhaseField.o Derivatives.o RND.o Output.o
 
 
 all: PhaseField
@@ -21,6 +21,9 @@ Derivatives.o: Derivatives.C
 
 RND.o: RND.C
 	$(CXX) $(CXXFLAGS) -o $@ $?
+	
+Output.o: Output.C
+	$(CXX) $(CXXFLAGS) -o $@ $?	
 
 clean:
 	rm -rf *.o PhaseField

@@ -19,12 +19,16 @@ int main() {
 	Init_RND(NN, 0.3, phi);
 
 	double *phi_xx, *phi_yy, *mu_xx, *mu_yy;
+	double *phi_x, *phi_y;
 
 	phi_xx = new double[NN];
 	mu_xx = new double[NN];
 
 	phi_yy = new double[NN];
 	mu_yy = new double[NN];
+
+	phi_x = new double[NN];
+	phi_y = new double[NN];
 
 	double *bound_b_o, *bound_r_o, *bound_u_o, *bound_l_o;
 	double *bound_b_i, *bound_r_i, *bound_u_i, *bound_l_i;
@@ -43,11 +47,11 @@ int main() {
 
 	double dt = 2.0e-3;
 	double dg, laplacian_phi, laplacian_mu;
-	int max_nt = 250000;
+	int max_nt = 250000, nt;
 
-//	double counter = dt * max_nt;
+	Output_(N, NN, 1, phi);
 
-	for (int nt = 1; nt < max_nt + 1; nt++) {
+	for (nt = 1; nt < max_nt + 1; nt++) {
 
 		for (int n = 0; n < N; n++) {
 
@@ -76,6 +80,7 @@ int main() {
 			gp_x[0] = bound_r_o[j];
 			gp_x[1] = phi[k + 1];
 
+			d_dx(gp_x, &(phi_x[k]));
 			d_dxx(phi[k], gp_x, &(phi_xx[k]));
 
 		}
@@ -89,6 +94,7 @@ int main() {
 				gp_x[0] = phi[k - 1];
 				gp_x[1] = phi[k + 1];
 
+				d_dx(gp_x, &(phi_x[k]));
 				d_dxx(phi[k], gp_x, &(phi_xx[k]));
 			}
 		}
@@ -100,6 +106,7 @@ int main() {
 			gp_x[0] = phi[k - 1];
 			gp_x[1] = bound_l_o[j];
 
+			d_dx(gp_x, &(phi_x[k]));
 			d_dxx(phi[k], gp_x, &(phi_xx[k]));
 
 		}
@@ -114,6 +121,7 @@ int main() {
 			gp_y[0] = bound_u_o[i];
 			gp_y[1] = phi[k + N];
 
+			d_dx(gp_y, &(phi_y[k]));
 			d_dxx(phi[k], gp_y, &(phi_yy[k]));
 
 		}
@@ -127,6 +135,7 @@ int main() {
 				gp_y[0] = phi[k - N];
 				gp_y[1] = phi[k + N];
 
+				d_dx(gp_y, &(phi_y[k]));
 				d_dxx(phi[k], gp_y, &(phi_yy[k]));
 			}
 		}
@@ -138,6 +147,7 @@ int main() {
 			gp_y[0] = phi[k - N];
 			gp_y[1] = bound_b_o[i];
 
+			d_dx(gp_y, &(phi_y[k]));
 			d_dxx(phi[k], gp_y, &(phi_yy[k]));
 
 		}
@@ -273,32 +283,19 @@ int main() {
 
 		}
 
+		if (nt == 2000)
+			Output_(N, NN, nt, phi_new);
+		else if (nt == 5000)
+			Output_(N, NN, nt, phi_new);
+		else if (nt == 25000)
+			Output_(N, NN, nt, phi_new);
+		else if (nt == 100000)
+			Output_(N, NN, nt, phi_new);
+		else if (nt == 250000)
+			Output_(N, NN, nt, phi_new);
+
 	}
 
-	int np = 0;
-
-	FILE * fp;
-	fp = fopen("phi.m","w+");
-	fprintf(fp, "clear\nclc\nphi1 = [");
-
-	for (int i = 0; i < N; i++) {
-
-		for (int j = 0; j < N; j++) {
-
-			np = i + N * j;
-
-			if (np == NN - 1)
-				fprintf(fp, "%.15f", phi_new[np]);
-			else if (j == N - 1)
-				fprintf(fp, "%.15f\n", phi_new[np]);
-			else
-				fprintf(fp, "%.15f, ", phi_new[np]);
-
-		}
-	}
-
-	fprintf(fp, "];\nfigure\ncontour(phi1,'fill','on')");
-	fclose(fp);
 
 	/* free the memory */
 	delete[] phi_new;
@@ -315,9 +312,11 @@ int main() {
 	delete[] bound_l_i;
 
 	delete[] phi_xx;
+	delete[] phi_x;
 	delete[] mu_xx;
 
 	delete[] phi_yy;
+	delete[] phi_y;
 	delete[] mu_yy;
 
 	return 0;
