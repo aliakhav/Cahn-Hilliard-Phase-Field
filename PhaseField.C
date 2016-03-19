@@ -16,7 +16,7 @@ int main() {
 	phi = new double[NN];
 	mu = new double[NN];
 
-	double concent = 0.3;
+	double concent = 0.7;
 
 	int cc;
 
@@ -58,14 +58,14 @@ int main() {
 
 	double dt = 2.0e-3;
 	double dg, laplacian_phi, laplacian_mu;
-	int max_nt = 25000, nt;
+	int max_nt = 250000, nt;
 
 	double t = dt * max_nt;
 
-	double *mix_E, *Interface_E, *total_E, *r_c;
+	double *mix_E, *Interface_E, *r_c;
+
 	mix_E = new double[max_nt];
 	Interface_E = new double[max_nt];
-	total_E = new double[max_nt];
 	r_c = new double[max_nt];
 
 
@@ -85,6 +85,9 @@ int main() {
 //################################################################
 //################################################################
 
+
+//					Applying B.C. for phi
+
 	for (nt = 1; nt < max_nt + 1; nt++) {
 
 		for (int n = 0; n < N; n++) {
@@ -101,7 +104,7 @@ int main() {
 
 		}
 
-//			Computing second order derivatives
+//	  Computing 1st and 2nd order derivatives of phi
 
 //########################################################
 //				  1. x direction
@@ -202,8 +205,9 @@ int main() {
 
 //########################################################
 //########################################################
+//				Applying B.C. for mu
 //########################################################
-
+//########################################################
 
 		for (int n = 0; n < N; n++) {
 
@@ -219,7 +223,7 @@ int main() {
 
 		}
 
-//			Computing second order derivatives
+//		Computing 1st and 2nd order derivatives of mu
 
 //########################################################
 //				  1. x direction
@@ -304,7 +308,7 @@ int main() {
 
 		mix_E[nt] = 0.0;
 		Interface_E[nt] = 0.0;
-		total_E[nt] = 0.0;
+
 		double phi_xy;
 		double den = 0.0, area = 0.0;
 
@@ -327,7 +331,7 @@ int main() {
 
 		mix_E[nt] *= 16.0;
 		Interface_E[nt] *= 5.0;
-		total_E[nt] = mix_E[nt] + Interface_E[nt];
+
 		r_c[nt] = area / den;
 
 		for (int np = 0; np < NN; np++) {
@@ -338,10 +342,9 @@ int main() {
 
 
 		if (nt != max_nt)
-			fprintf(fp1, "%.8f, %.8f, %.8f, %.8f\n", mix_E[nt], Interface_E[nt], total_E[nt], r_c[nt]);
+			fprintf(fp1, "%.4f, %.4f, %.4f\n", mix_E[nt], Interface_E[nt], r_c[nt]);
 		else
-			fprintf(fp1, "%.8f, %.8f, %.8f, %.8f", mix_E[nt], Interface_E[nt], total_E[nt], r_c[nt]);
-
+			fprintf(fp1, "%.4f, %.4f, %.4f", mix_E[nt], Interface_E[nt], r_c[nt]);
 
 		if (nt == 2000)
 			Output_(N, NN, nt, phi_new);
@@ -358,7 +361,8 @@ int main() {
 
 	fprintf(fp1, "];\n\n");
 	fprintf(fp1, "t = %f:%f:%f;\n\n",dt,dt,t);
-	fprintf(fp1, "figure \nloglog(t,recs(:,1),t,recs(:,2),t,recs(:,3)) \n grid on \n\nfigure \nloglog(t,recs(:,4)); \ngrid on");
+	fprintf(fp1, "figure \nloglog(t,recs(:,1),t,recs(:,2),t,recs(:,1)+recs(:,2)) \n");
+	fprintf(fp1, "grid on \n\nfigure \nloglog(t,recs(:,3)); \ngrid on");
 
 	fclose(fp1);
 
@@ -386,7 +390,6 @@ int main() {
 
 	delete[] mix_E;
 	delete[] Interface_E;
-	delete[] total_E;
 	delete[] r_c;
 
 	return 0;
