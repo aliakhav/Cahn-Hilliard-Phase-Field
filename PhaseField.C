@@ -16,7 +16,18 @@ int main() {
 	phi = new double[NN];
 	mu = new double[NN];
 
-	Init_RND(NN, 0.3, phi);
+	double concent = 0.3;
+
+	int cc;
+
+	if (concent == 0.3)
+		cc = 1;
+	else if (concent == 0.5)
+		cc = 2;
+	else
+		cc = 3;
+
+	Init_RND(NN, concent, phi);
 
 	double *phi_xx, *phi_yy, *mu_xx, *mu_yy;
 	double *phi_x, *phi_y;
@@ -47,9 +58,32 @@ int main() {
 
 	double dt = 2.0e-3;
 	double dg, laplacian_phi, laplacian_mu;
-	int max_nt = 250000, nt;
+	int max_nt = 25000, nt;
+
+	double t = dt * max_nt;
+
+	double *mix_E, *Interface_E, *total_E, *r_c;
+	mix_E = new double[max_nt];
+	Interface_E = new double[max_nt];
+	total_E = new double[max_nt];
+	r_c = new double[max_nt];
+
 
 	Output_(N, NN, 1, phi);
+
+	char filename[50];
+	sprintf(filename, "Records_%03d.m", cc);
+
+	FILE * fp1;
+	fp1 = fopen(filename,"w+");
+	fprintf(fp1, "clear\nclc\nrecs = [");
+
+
+//################################################################
+//################################################################
+//						Time Stepping
+//################################################################
+//################################################################
 
 	for (nt = 1; nt < max_nt + 1; nt++) {
 
@@ -268,8 +302,22 @@ int main() {
 //########################################################
 //########################################################
 
+		mix_E[nt] = 0.0;
+		Interface_E[nt] = 0.0;
+		total_E[nt] = 0.0;
+		double phi_xy;
+		double den = 0.0, area = 0.0;
 
 		for (int np = 0; np < NN; np++) {
+
+			phi_xy = phi_x[np] * phi_x[np] + phi_y[np] * phi_y[np];
+
+			mix_E[nt] += (phi[np] - 1.0) * (phi[np] - 1.0) * phi[np] * phi[np];
+
+			Interface_E[nt] += phi_xy;
+
+			den += sqrt(phi_xy);
+			area += phi[np];
 
 			laplacian_mu = mu_xx[np] + mu_yy[np];
 
@@ -277,11 +325,23 @@ int main() {
 
 		}
 
+		mix_E[nt] *= 16.0;
+		Interface_E[nt] *= 5.0;
+		total_E[nt] = mix_E[nt] + Interface_E[nt];
+		r_c[nt] = area / den;
+
 		for (int np = 0; np < NN; np++) {
 
 			phi[np] = phi_new[np];
 
 		}
+
+
+		if (nt != max_nt)
+			fprintf(fp1, "%.8f, %.8f, %.8f, %.8f\n", mix_E[nt], Interface_E[nt], total_E[nt], r_c[nt]);
+		else
+			fprintf(fp1, "%.8f, %.8f, %.8f, %.8f", mix_E[nt], Interface_E[nt], total_E[nt], r_c[nt]);
+
 
 		if (nt == 2000)
 			Output_(N, NN, nt, phi_new);
@@ -296,6 +356,11 @@ int main() {
 
 	}
 
+	fprintf(fp1, "];\n\n");
+	fprintf(fp1, "t = %f:%f:%f;\n\n",dt,dt,t);
+	fprintf(fp1, "figure \nloglog(t,recs(:,1),t,recs(:,2),t,recs(:,3)) \n grid on \n\nfigure \nloglog(t,recs(:,4)); \ngrid on");
+
+	fclose(fp1);
 
 	/* free the memory */
 	delete[] phi_new;
@@ -318,6 +383,11 @@ int main() {
 	delete[] phi_yy;
 	delete[] phi_y;
 	delete[] mu_yy;
+
+	delete[] mix_E;
+	delete[] Interface_E;
+	delete[] total_E;
+	delete[] r_c;
 
 	return 0;
 
